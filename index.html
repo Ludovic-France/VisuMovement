@@ -1,77 +1,71 @@
-diff --git a/index.html b/index.html
-index 8b137891791fe96927ad78e64b0aad7bded08bdc..9fcbd0aab3d43b0793caabe3818b6195e437ee70 100644
---- a/index.html
-+++ b/index.html
-@@ -1 +1,71 @@
-+<!DOCTYPE html>
-+<html lang="en">
-+<head>
-+  <meta charset="UTF-8">
-+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-+  <title>MPU6050 Visualization</title>
-+  <style>
-+    body { margin:0; overflow:hidden; }
-+    #info { position:absolute; top:10px; left:10px; color:#fff; font-family:Arial, sans-serif; }
-+  </style>
-+</head>
-+<body>
-+  <div id="info">Connecting...</div>
-+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-+  <script>
-+    // Set up basic Three.js scene
-+    const scene = new THREE.Scene();
-+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-+    const renderer = new THREE.WebGLRenderer({antialias:true});
-+    renderer.setSize(window.innerWidth, window.innerHeight);
-+    document.body.appendChild(renderer.domElement);
- 
-+    const geometry = new THREE.BoxGeometry(1, 0.2, 0.5); // Rough MPU6050 shape
-+    const material = new THREE.MeshNormalMaterial();
-+    const mpu = new THREE.Mesh(geometry, material);
-+    scene.add(mpu);
-+
-+    camera.position.z = 3;
-+
-+    function animate() {
-+      requestAnimationFrame(animate);
-+      renderer.render(scene, camera);
-+    }
-+    animate();
-+
-+    // Handle resize
-+    window.addEventListener('resize', () => {
-+      camera.aspect = window.innerWidth / window.innerHeight;
-+      camera.updateProjectionMatrix();
-+      renderer.setSize(window.innerWidth, window.innerHeight);
-+    });
-+
-+    // WebSocket connection
-+    const info = document.getElementById('info');
-+    const socket = new WebSocket('ws://' + window.location.hostname + ':81/');
-+    socket.addEventListener('open', () => {
-+      info.textContent = 'Connected';
-+    });
-+    socket.addEventListener('close', () => {
-+      info.textContent = 'Disconnected';
-+    });
-+    socket.addEventListener('message', (event) => {
-+      try {
-+        const data = JSON.parse(event.data);
-+        if (typeof data.roll === 'number' && typeof data.pitch === 'number' && typeof data.yaw === 'number') {
-+          // Assuming radians from server
-+          mpu.rotation.x = data.pitch;
-+          mpu.rotation.y = data.yaw;
-+          mpu.rotation.z = data.roll;
-+        }
-+        if (typeof data.ax === 'number' && typeof data.ay === 'number' && typeof data.az === 'number') {
-+          // Basic translation to visualize acceleration
-+          mpu.position.set(data.ax, data.ay, data.az);
-+        }
-+      } catch (e) {
-+        console.error('Invalid data', event.data);
-+      }
-+    });
-+  </script>
-+</body>
-+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPU6050 Visualization</title>
+  <style>
+    body { margin:0; overflow:hidden; }
+    #info { position:absolute; top:10px; left:10px; color:#fff; font-family:Arial, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="info">Connecting...</div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script>
+    // Set up basic Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
+    const geometry = new THREE.BoxGeometry(1, 0.2, 0.5); // Rough MPU6050 shape
+    const material = new THREE.MeshNormalMaterial();
+    const mpu = new THREE.Mesh(geometry, material);
+    scene.add(mpu);
+
+    camera.position.z = 3;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // WebSocket connection
+    const info = document.getElementById('info');
+    const socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    socket.addEventListener('open', () => {
+      info.textContent = 'Connected';
+    });
+    socket.addEventListener('close', () => {
+      info.textContent = 'Disconnected';
+    });
+    socket.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (typeof data.roll === 'number' && typeof data.pitch === 'number' && typeof data.yaw === 'number') {
+          // Assuming radians from server
+          mpu.rotation.x = data.pitch;
+          mpu.rotation.y = data.yaw;
+          mpu.rotation.z = data.roll;
+        }
+        if (typeof data.ax === 'number' && typeof data.ay === 'number' && typeof data.az === 'number') {
+          // Basic translation to visualize acceleration
+          mpu.position.set(data.ax, data.ay, data.az);
+        }
+      } catch (e) {
+        console.error('Invalid data', event.data);
+      }
+    });
+  </script>
+</body>
+</html>
