@@ -11,6 +11,11 @@
 </head>
 <body>
   <div id="info">Connecting...</div>
+  <div id="controls" style="position:absolute;top:40px;left:10px;color:#fff;font-family:Arial, sans-serif;">
+    <label for="filterSlider">Filtre acceléromètre:</label>
+    <input type="range" id="filterSlider" min="0" max="1" step="0.01" value="1">
+    <button id="resetBtn">Réinitialiser</button>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script>
     // Set up basic Three.js scene
@@ -24,6 +29,14 @@
     const material = new THREE.MeshNormalMaterial();
     const mpu = new THREE.Mesh(geometry, material);
     scene.add(mpu);
+
+    // Filter setup
+    const slider = document.getElementById('filterSlider');
+    let filterStrength = parseFloat(slider.value);
+    slider.addEventListener('input', () => {
+      filterStrength = parseFloat(slider.value);
+    });
+    const filteredAcc = {x: 0, y: 0, z: 0};
 
     camera.position.z = 3;
 
@@ -49,6 +62,12 @@
     socket.addEventListener('close', () => {
       info.textContent = 'Disconnected';
     });
+	const resetBtn = document.getElementById('resetBtn');
+    resetBtn.addEventListener('click', () => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({command: 'calibrate'}));
+      }
+    });
     socket.addEventListener('message', (event) => {
       try {
         const data = JSON.parse(event.data);
@@ -59,8 +78,10 @@
           mpu.rotation.z = data.roll;
         }
         if (typeof data.ax === 'number' && typeof data.ay === 'number' && typeof data.az === 'number') {
-          // Basic translation to visualize acceleration
-          mpu.position.set(data.ax, data.ay, data.az);
+          filteredAcc.x = filteredAcc.x * (1 - filterStrength) + data.ax * filterStrength;
+          filteredAcc.y = filteredAcc.y * (1 - filterStrength) + data.ay * filterStrength;
+          filteredAcc.z = filteredAcc.z * (1 - filterStrength) + data.az * filterStrength;
+          mpu.position.set(filteredAcc.x, filteredAcc.y, filteredAcc.z);
         }
       } catch (e) {
         console.error('Invalid data', event.data);
